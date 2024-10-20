@@ -76,20 +76,21 @@ class _BodyState extends State<Body> with TickerProviderStateMixin {
           time();
         });
       }
-      if (winMark == 5 || loseMark == 5) {
+      if (winMark == 20 || loseMark == 10) {
         durationTimeController.stop();
-        dialog();
+        dialog(context);
       }
     });
   }
 
-  void dialog() {
+  void dialog(context) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        icon: winMark == 5 ? const Icon(Icons.check_circle, size: 50, color: Colors.green) : const Icon(Icons.dangerous, size: 50, color: Colors.red),
+        content: Text('data'),
+        icon: winMark == 20 ? const Icon(Icons.check_circle, size: 50, color: Colors.green) : const Icon(Icons.dangerous, size: 50, color: Colors.red),
         title: Text(
-          winMark == 5 ? 'You Win!' : 'Game Over',
+          winMark == 20 ? 'You Win!' : 'Game Over',
           style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
         ),
         actions: [
