@@ -1,5 +1,4 @@
 import 'dart:math';
-
 import 'package:flutter/material.dart';
 import 'package:poker_quizz/button.dart';
 import 'package:poker_quizz/data.dart';
@@ -17,7 +16,7 @@ class MyApp extends StatelessWidget {
         appBar: AppBar(
           title: const Text('Material App Bar'),
         ),
-        body: Body(),
+        body: const Body(),
       ),
     );
   }
@@ -35,6 +34,8 @@ class Body extends StatefulWidget {
 class _BodyState extends State<Body> with TickerProviderStateMixin {
   late AnimationController durationTimeController;
   late Animation durationTime;
+  late AnimationController _controller;
+  late Animation _animation;
   Random random = Random();
   int winMark = 0;
   int loseMark = 0;
@@ -43,6 +44,19 @@ class _BodyState extends State<Body> with TickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
+
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(
+        seconds: 1,
+      ),
+    );
+
+    _animation = Tween(end: 1.0, begin: 0.0).animate(_controller)
+      ..addListener(() {
+        setState(() {});
+      });
+
     time();
   }
 
@@ -51,65 +65,78 @@ class _BodyState extends State<Body> with TickerProviderStateMixin {
     ans = random.nextInt(13);
     durationTimeController = AnimationController(
       vsync: this,
-      duration: Duration(
-        seconds: 10,
-      ),
+      duration: const Duration(seconds: 10),
     );
     durationTime = IntTween(begin: 10, end: 0).animate(durationTimeController);
     durationTimeController.forward();
     durationTimeController.addListener(() {
       if (durationTime.status == AnimationStatus.completed) {
-        time();
-        setState(() {});
-      } else if (winMark == 20 || loseMark == 10) {
+        _controller.forward().then((value) {
+          _controller.reset();
+          time();
+        });
+      }
+      if (winMark == 5 || loseMark == 5) {
         durationTimeController.stop();
-        //dialog();
+        dialog();
       }
     });
   }
 
-  // void dialog() {
-  //   showDialog(
-  //       context: context,
-  //       builder: (context) => const AboutDialog(
-  //             applicationIcon: FlutterLogo(),
-  //             applicationLegalese: 'Aung Kaung Khant',
-  //             applicationName: 'Flutter App',
-  //             applicationVersion: 'version 1.3.2',
-  //           ));
-  // }
+  void dialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        icon: winMark == 5 ? const Icon(Icons.check_circle, size: 50, color: Colors.green) : const Icon(Icons.dangerous, size: 50, color: Colors.red),
+        title: Text(
+          winMark == 5 ? 'You Win!' : 'Game Over',
+          style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+            },
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
 
   void small() {
     if (questions[ques].cardsName < questions[ans].cardsName) {
       winMark++;
     } else {
-      // winMark--;
       loseMark++;
     }
-    time();
-    setState(() {});
+    _controller.forward().then((value) {
+      _controller.reset();
+      time();
+    });
   }
 
   void equal() {
     if (questions[ques].cardsName == questions[ans].cardsName) {
       winMark += 2;
     } else {
-      // winMark--;
       loseMark++;
     }
-    time();
-    setState(() {});
+    _controller.forward().then((value) {
+      _controller.reset();
+      time();
+    });
   }
 
   void large() {
     if (questions[ques].cardsName > questions[ans].cardsName) {
       winMark++;
     } else {
-      // winMark--;
       loseMark++;
     }
-    time();
-    setState(() {});
+    _controller.forward().then((value) {
+      _controller.reset();
+      time();
+    });
   }
 
   @override
@@ -121,10 +148,10 @@ class _BodyState extends State<Body> with TickerProviderStateMixin {
             builder: (context, child) {
               return Text(
                 durationTime.value.toString(),
-                style: TextStyle(fontSize: 30),
+                style: const TextStyle(fontSize: 30),
               );
             }),
-        SizedBox(
+        const SizedBox(
           height: 20,
         ),
         Row(
@@ -134,9 +161,9 @@ class _BodyState extends State<Body> with TickerProviderStateMixin {
               children: [
                 Text(
                   loseMark.toString(),
-                  style: TextStyle(fontSize: 20),
+                  style: const TextStyle(fontSize: 20),
                 ),
-                Text(
+                const Text(
                   'Lose',
                   style: TextStyle(
                       fontWeight: FontWeight.bold,
@@ -149,9 +176,9 @@ class _BodyState extends State<Body> with TickerProviderStateMixin {
               children: [
                 Text(
                   winMark.toString(),
-                  style: TextStyle(fontSize: 20),
+                  style: const TextStyle(fontSize: 20),
                 ),
-                Text(
+                const Text(
                   'Win',
                   style: TextStyle(
                       fontWeight: FontWeight.bold,
@@ -173,17 +200,35 @@ class _BodyState extends State<Body> with TickerProviderStateMixin {
                       image: AssetImage(questions[ques].imgUrl),
                       fit: BoxFit.cover)),
             ),
-            Container(
-              height: 300,
-              width: 190,
-              decoration: BoxDecoration(
-                  image: DecorationImage(
-                      image: AssetImage(questions[ans].imgUrl),
-                      fit: BoxFit.cover)),
+            Transform(
+              alignment: FractionalOffset.center,
+              transform: Matrix4.identity()
+                ..setEntry(2, 1, 0.0015)
+                ..rotateY(pi * _animation.value),
+              child: Card(
+                child: _animation.value <= 0.5
+                    ? Container(
+                        color: Colors.blue,
+                        width: 190,
+                        height: 300,
+                        child: const Center(
+                            child: Text(
+                          '?',
+                          style: TextStyle(fontSize: 100, color: Colors.white),
+                        )))
+                    : Container(
+                        height: 300,
+                        width: 190,
+                        decoration: BoxDecoration(
+                            image: DecorationImage(
+                                image: AssetImage(questions[ans].imgUrl),
+                                fit: BoxFit.cover)),
+                      ),
+              ),
             ),
           ],
         ),
-        SizedBox(
+        const SizedBox(
           height: 20,
         ),
         Row(
@@ -193,34 +238,19 @@ class _BodyState extends State<Body> with TickerProviderStateMixin {
                 text: 'Small',
                 onPressed: () {
                   small();
-                  print('Small');
                 }),
             Button(
                 text: 'Equal',
                 onPressed: () {
                   equal();
-                  print('Equal');
                 }),
             Button(
                 text: 'Large',
                 onPressed: () {
                   large();
-                  print('Large');
                 }),
           ],
         ),
-        // ElevatedButton(
-        //     onPressed: () {
-        //       showDialog(
-        //           context: context,
-        //           builder: (context) => const AboutDialog(
-        //                 applicationIcon: FlutterLogo(),
-        //                 applicationLegalese: 'Aung Kaung Khant',
-        //                 applicationName: 'Flutter App',
-        //                 applicationVersion: 'version 1.3.2',
-        //               ));
-        //     },
-        //     child: const Text('data'))
       ],
     );
   }
